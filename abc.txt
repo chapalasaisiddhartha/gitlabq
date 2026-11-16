@@ -1,0 +1,1220 @@
+# **Complete Cheat Sheet – All 8 Practical Experiments**
+
+This is your **last-minute practical revision sheet**. I've organised every experiment in the order you need to perform it, with the commands, configuration values and expected results.
+
+**How to use it:** Memorise the bold steps and commands. Before the exam, practise typing the commands once rather than just reading them.
+
+**8 practicals – quick navigation**
+
+1. AWS Cloud Deployment
+2. AWS VPC and EC2
+3. Dockerfile – Single Container
+4. Docker Compose – Multiple Containers
+5. Jenkins GitHub Webhooks and Email
+6. Jenkins Maven Java and Web Automation
+7. Jenkins Pipeline Script and Triggers
+8. Kubernetes and Nagios
+
+# **1. Cloud Deployment Using AWS**
+
+Main flow: GitHub → EC2 → Docker → Browser
+
+**Remember these 8 steps:**
+
+1. Create Maven Web Java project.
+2. Push project to GitHub.
+3. Launch Ubuntu EC2 instance.
+4. Connect using SSH.
+5. Install Docker, Git and Nano.
+6. Clone GitHub repository.
+7. Create Dockerfile and build image.
+8. Run container and access application.
+
+### **EC2 configuration**
+
+| Setting          | Value                     |
+| ---------------- | ------------------------- |
+| AMI              | Ubuntu Server             |
+| Instance         | `t2.micro` (as in manual) |
+| Storage          | 8 GB                      |
+| Key pair         | `.pem` file               |
+| Security group   | SSH, HTTP, HTTPS          |
+| Application port | `6060`                    |
+
+### **Commands to memorise**
+
+**1. Connect to EC2 from PowerShell**
+
+```
+ssh -i "your-key.pem" ubuntu@YOUR_PUBLIC_IP
+```
+
+**2. Update Ubuntu**
+
+```
+sudo apt update
+```
+
+**3. Install software**
+
+```
+sudo apt-get install docker.io -y
+sudo apt install git -y
+sudo apt install nano -y
+```
+
+**4. Clone repository**
+
+```
+git clone YOUR_GITHUB_REPOSITORY_URL
+cd YOUR_PROJECT_FOLDER
+ls
+```
+
+**5. Create Dockerfile**
+
+```
+nano Dockerfile
+```
+
+Contents:
+
+```
+FROM tomcat:9-jdk11
+COPY ./*.war /usr/local/tomcat/webapps/
+EXPOSE 8080
+CMD ["catalina.sh", "run"]
+```
+
+If the WAR is inside `target/`, change the COPY path to `target/*.war`.
+
+**6. Build image**
+
+```
+sudo docker build -t myapp .
+```
+
+**7. Run container**
+
+```
+sudo docker run -d --name app-demo -p 6060:8080 myapp
+```
+
+**8. Verify**
+
+```
+sudo docker ps
+sudo docker images
+```
+
+**9. Open application**
+
+```
+http://YOUR_EC2_PUBLIC_IP:6060/your-war-name
+```
+
+**Most important to remember**
+
+`6060:8080` means:
+
+- `6060` = EC2 host port
+- `8080` = Tomcat container port
+
+Allow inbound TCP port **6060** in the EC2 security group.
+
+# **2. AWS VPC Creation and EC2 Accessing**
+
+Main flow: VPC → Subnets → Gateways → Route Tables → EC2
+
+### **Configuration values**
+
+| Component           | Value         |
+| ------------------- | ------------- |
+| VPC                 | `10.0.0.0/16` |
+| Public subnet       | `10.0.1.0/24` |
+| Private subnet      | `10.0.2.0/24` |
+| Internet Gateway    | `Custom-IGW`  |
+| Public route table  | `Public-RT`   |
+| Private route table | `Private-RT`  |
+
+### **Steps to remember**
+
+1. Create VPC.
+2. Create public subnet.
+3. Create private subnet.
+4. Create Internet Gateway.
+5. Attach Internet Gateway to VPC.
+6. Create public route table.
+7. Add Internet Gateway route.
+8. Associate public subnet.
+9. Create private route table.
+10. Associate private subnet.
+11. Create NAT Gateway with Elastic IP in public subnet.
+12. Add NAT route to private route table.
+13. Configure security groups.
+14. Launch public and private EC2 instances.
+
+### **Important route table entries**
+
+| Route table | Destination   | Target           |
+| ----------- | ------------- | ---------------- |
+| Public-RT   | `10.0.0.0/16` | Local            |
+| Public-RT   | `0.0.0.0/0`   | Internet Gateway |
+| Private-RT  | `10.0.0.0/16` | Local            |
+| Private-RT  | `0.0.0.0/0`   | NAT Gateway      |
+
+### **Security group ports**
+
+| Type  | Port |
+| ----- | ---- |
+| SSH   | 22   |
+| HTTP  | 80   |
+| HTTPS | 443  |
+
+SSH should normally be restricted to your trusted IP. Database access should be restricted to the application server's security group.
+
+### **Expected result**
+
+- Public EC2: Internet connectivity through Internet Gateway.
+- Private EC2: Outbound internet connectivity through NAT Gateway.
+- Private EC2: No direct inbound internet connectivity.
+
+**Memory trick:** Public = IGW. Private outbound = NAT.
+
+# **3. Dockerfile – Single Containerization**
+
+Main flow: Pull → Run → Access → Stop → Build → Push → Pull
+
+### **Part A: Redis CLI**
+
+Memorise these commands in order:
+
+```
+docker pull redis
+```
+
+```
+docker run --name my-redis -d redis
+```
+
+```
+docker ps
+```
+
+```
+docker exec -it my-redis redis-cli
+```
+
+Inside Redis:
+
+```
+SET name "Alice"
+GET name
+exit
+```
+
+Expected output:
+
+```
+OK
+"Alice"
+```
+
+Stop, restart and remove:
+
+```
+docker stop my-redis
+docker start my-redis
+docker stop my-redis
+docker rm my-redis
+docker rmi redis
+```
+
+### **Part B: Create Dockerfile**
+
+Folder:
+
+```
+C:\DockerProjects\Redis
+```
+
+Dockerfile:
+
+```
+FROM redis:latest
+CMD ["redis-server"]
+```
+
+Build:
+
+```
+docker build -t redisnew .
+```
+
+Run:
+
+```
+docker run --name myredisnew -d redisnew
+```
+
+### **Part C: Docker Hub**
+
+```
+docker login
+docker ps -a
+docker commit CONTAINER_ID USERNAME/redis1
+docker images
+docker push USERNAME/redis1
+```
+
+Remove and download again:
+
+```
+docker stop myredisnew
+docker rm myredisnew
+docker rmi USERNAME/redis1
+docker logout
+docker pull USERNAME/redis1
+```
+
+Run downloaded image:
+
+```
+docker run --name myredis -d USERNAME/redis1
+docker exec -it myredis redis-cli
+```
+
+Test:
+
+```
+SET name "Abcdef"
+GET name
+exit
+```
+
+### **Important Docker commands**
+
+| Command           | Purpose                    |
+| ----------------- | -------------------------- |
+| `docker pull`     | Download image             |
+| `docker run`      | Create and start container |
+| `docker ps`       | Running containers         |
+| `docker ps -a`    | All containers             |
+| `docker stop`     | Stop container             |
+| `docker start`    | Start stopped container    |
+| `docker rm`       | Delete container           |
+| `docker rmi`      | Delete image               |
+| `docker images`   | List images                |
+| `docker logs`     | View logs                  |
+| `docker exec -it` | Enter container            |
+| `docker build -t` | Build image                |
+| `docker login`    | Login to Docker Hub        |
+| `docker push`     | Upload image               |
+| `docker pull`     | Download image             |
+| `docker save`     | Save image to TAR          |
+
+**Never confuse:**
+
+- `docker rm` = container
+- `docker rmi` = image
+
+# **4. Docker Compose – Multi Containerization**
+
+Main flow: YAML → Up → Check → Browser → Down
+
+### **Basic Docker Compose YAML**
+
+```
+services:
+  web:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: demo
+      POSTGRES_PASSWORD: demo
+      POSTGRES_DB: demo_db
+```
+
+Run:
+
+```
+docker compose up -d
+```
+
+Check:
+
+```
+docker compose ps
+```
+
+Open:
+
+[Nginx application](http://localhost:8080?utm_source=chatgpt.com)
+
+Stop:
+
+```
+docker compose down
+```
+
+### **Task 2: Add Redis**
+
+```
+services:
+  web:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+    depends_on:
+      - redis
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: demo
+      POSTGRES_PASSWORD: demo
+      POSTGRES_DB: demo_db
+
+  redis:
+    image: redis:alpine
+```
+
+Run:
+
+```
+docker compose up -d
+docker compose ps
+```
+
+### **Task 3: Share application**
+
+1. ZIP the project folder.
+2. Transfer it to another computer.
+3. Extract it.
+4. Run:
+
+```
+docker compose up -d
+```
+
+### **Task 4: Network and Volume**
+
+Memorise these YAML sections:
+
+```
+services:
+  web:
+    image: nginx:latest
+    ports:
+      - "8080:80"
+    networks:
+      - app-net
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: demo
+      POSTGRES_PASSWORD: demo
+      POSTGRES_DB: demo_db
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - app-net
+
+networks:
+  app-net:
+
+volumes:
+  db-data:
+```
+
+Run:
+
+```
+docker compose up -d
+```
+
+Test database:
+
+```
+docker compose exec db psql -U demo -d demo_db
+```
+
+SQL:
+
+```
+CREATE TABLE students (
+    id INT,
+    name VARCHAR(50)
+);
+
+INSERT INTO students VALUES (1, 'Alice');
+
+SELECT * FROM students;
+
+\q
+```
+
+Persistence test:
+
+```
+docker compose down
+docker compose up -d
+```
+
+Connect again and run:
+
+```
+SELECT * FROM students;
+```
+
+The data should remain because of the named volume.
+
+### **Task 5: Flask application**
+
+`app.py`:
+
+```
+from flask import Flaskapp = Flask(__name__)@app.route("/")def home():    return "Hello from Flask + Docker!"if __name__ == "__main__":    app.run(host="0.0.0.0", port=5000)
+```
+
+Dockerfile:
+
+```
+FROM python:3.10-slim
+WORKDIR /app
+COPY app.py /app/
+RUN pip install flask
+CMD ["python", "app.py"]
+```
+
+Compose:
+
+```
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+```
+
+Build and run:
+
+```
+docker compose up --build
+```
+
+Open:
+
+[Flask application](http://localhost:5000?utm_source=chatgpt.com)
+
+### **Docker Compose command revision**
+
+| Command                              | Meaning                                        |
+| ------------------------------------ | ---------------------------------------------- |
+| `docker compose up -d`               | Start services in background                   |
+| `docker compose down`                | Stop and remove Compose containers and network |
+| `docker compose ps`                  | List services                                  |
+| `docker compose restart`             | Restart services                               |
+| `docker compose up --build`          | Rebuild and start                              |
+| `docker compose logs`                | View logs                                      |
+| `docker compose exec`                | Execute command in service                     |
+| `docker compose up --scale web=2 -d` | Scale service                                  |
+
+# **5. Jenkins CI/CD with Git Hooks**
+
+Main flow: ngrok → GitHub Webhook → Jenkins → Gmail
+
+### **Part A: GitHub Webhook**
+
+**Step 1. Start Jenkins**
+
+```
+http://localhost:8080
+```
+
+**Step 2. Start ngrok**
+
+```
+ngrok http 8080
+```
+
+Copy the HTTPS forwarding URL.
+
+**Step 3. Open GitHub**
+
+Repository → Settings → Webhooks → Add webhook.
+
+Enter:
+
+| Field        | Value                                    |
+| ------------ | ---------------------------------------- |
+| Payload URL  | `https://YOUR-NGROK-URL/github-webhook/` |
+| Content type | `application/json`                       |
+| Events       | Just the push event                      |
+| Active       | Checked                                  |
+
+**Step 4. Configure Jenkins**
+
+Job → Configure → Build Triggers.
+
+Select:
+
+```
+GitHub hook trigger for GITScm polling
+```
+
+Save.
+
+**Step 5. Test**
+
+Push a change to GitHub and check Jenkins Build History.
+
+**Remember the webhook flow**
+
+GitHub Push → Webhook → ngrok → Jenkins → Automatic Build
+
+### **Part B: Gmail App Password**
+
+1. Google Account → Security.
+2. Enable 2-Step Verification.
+3. Open App Passwords.
+4. Generate `Jenkins-Demo`.
+5. Copy the 16-digit password.
+
+### **Part C: Jenkins Email Plugin**
+
+Install:
+
+```
+Email Extension Plugin
+```
+
+Go to:
+
+```
+Manage Jenkins → Plugins
+```
+
+### **Part D: SMTP settings**
+
+In Manage Jenkins → System:
+
+| Field          | Value              |
+| -------------- | ------------------ |
+| SMTP server    | `smtp.gmail.com`   |
+| SMTP port      | `465`              |
+| Username       | Gmail address      |
+| Password       | Gmail App Password |
+| SSL            | Enabled            |
+| Authentication | Enabled            |
+
+Configure both **E-mail Notification** and **Extended E-mail Notification** as required by your Jenkins version.
+
+### **Part E: Job Email Notification**
+
+Job → Configure → Post-build Actions → Editable Email Notification.
+
+Enter:
+
+| Field        | Value                                 |
+| ------------ | ------------------------------------- |
+| Recipient    | Your Gmail address                    |
+| Content Type | Default or HTML                       |
+| Subject      | `$PROJECT_NAME - Build $BUILD_STATUS` |
+| Trigger      | Success and Failure                   |
+
+Save and run a test build.
+
+**Expected result:** Jenkins sends email on success or failure.
+
+# **6. Jenkins Pipeline Upload – Maven Java and Maven Web**
+
+Main flow: Build → Test → Deploy
+
+### **Prerequisites**
+
+Install/configure:
+
+- Java
+- Maven
+- Git plugin
+- Maven Integration plugin
+- Copy Artifact plugin
+- Build Pipeline plugin
+- Deploy to container plugin
+
+Configure Maven under:
+
+```
+Manage Jenkins → Tools
+```
+
+Use the configured name:
+
+```
+MAVEN_HOME
+```
+
+### **Part A: Maven Java automation**
+
+**MavenJava_Build**
+
+Git → clean → install → archive
+
+**MavenJava_Test**
+
+Copy artifacts → test → archive
+
+**Job 1: MavenJava_Build**
+
+1. New Item → Freestyle project.
+2. Name: `MavenJava_Build`.
+3. SCM → Git → repository URL.
+4. Branch: `*/main` or `*/master`, depending on actual branch.
+5. Build Steps → Invoke top-level Maven targets.
+
+First Maven step:
+
+```
+clean
+```
+
+Second Maven step:
+
+```
+install
+```
+
+Post-build:
+
+```
+Archive artifacts: **/*
+Build other projects: MavenJava_Test
+Trigger: Only if build is stable
+```
+
+**Job 2: MavenJava_Test**
+
+1. New Item → Freestyle.
+2. Name: `MavenJava_Test`.
+3. Build Environment → Delete workspace before build.
+4. Build Steps → Copy artifacts from another project.
+
+| Field     | Value             |
+| --------- | ----------------- |
+| Project   | `MavenJava_Build` |
+| Build     | Stable build only |
+| Artifacts | `**/*`            |
+
+5\. Add Maven target:
+
+```
+test
+```
+
+6\. Archive artifacts:
+
+```
+**/*
+```
+
+**Job 3: Pipeline View**
+
+1. Click `+` beside All.
+2. Name: `MavenJava_Pipeline`.
+3. Select Build Pipeline View.
+4. Initial Job: `MavenJava_Build`.
+5. Save and run.
+
+### **Part B: Maven Web automation**
+
+**MavenWeb_Build**
+
+Git → clean → install → archive
+
+**MavenWeb_Test**
+
+Copy artifacts → test → archive
+
+**MavenWeb_Deploy**
+
+Copy WAR → deploy to Tomcat
+
+**Job 1: MavenWeb_Build**
+
+- Freestyle project: `MavenWeb_Build`.
+- Git repository URL.
+- Branch: `*/main` or actual branch.
+- Maven goals: `clean`, then `install`.
+- Archive: `**/*`.
+- Build other projects: `MavenWeb_Test`, only if stable.
+
+**Job 2: MavenWeb_Test**
+
+- Freestyle project: `MavenWeb_Test`.
+- Delete workspace.
+- Copy artifacts from `MavenWeb_Build`.
+- Stable build only.
+- Artifacts: `**/*`.
+- Maven goal: `test`.
+- Archive: `**/*`.
+- Build other projects: `MavenWeb_Deploy`, only if stable.
+
+**Job 3: MavenWeb_Deploy**
+
+- Freestyle project: `MavenWeb_Deploy`.
+- Delete workspace.
+- Copy artifacts from `MavenWeb_Test`.
+- Stable build only.
+- WAR/EAR File:
+
+```
+**/*.war
+```
+
+Tomcat deployment configuration:
+
+| Field        | Value                                 |
+| ------------ | ------------------------------------- |
+| Context path | `Webpath`                             |
+| Container    | Tomcat 9.x Remote                     |
+| Tomcat URL   | Actual Tomcat URL                     |
+| Credentials  | Configured Tomcat Manager credentials |
+
+Save.
+
+**Pipeline View:**
+
+```
+MavenWeb_Pipeline
+```
+
+Initial Job:
+
+```
+MavenWeb_Build
+```
+
+Run and verify all three jobs.
+
+**Expected result:** Maven Web application gets deployed to Tomcat at the configured context path.
+
+# **7. Jenkins Script and Build Triggers**
+
+Main flow: Pipeline → Script → Build → Trigger
+
+### **Step 1. Create Pipeline**
+
+Jenkins → New Item → `MavenJava_Pipeline` → Pipeline → OK.
+
+Definition:
+
+```
+Pipeline script
+```
+
+### **Step 2. Paste this code**
+
+```
+pipeline {
+    agent any
+
+    tools {
+        maven 'MAVEN-HOME'
+    }
+
+    stages {
+
+        stage('git repo & clean') {
+            steps {
+                bat "git clone YOUR_GITHUB_REPOSITORY_URL"
+                bat "mvn clean -f mavenjava"
+            }
+        }
+
+        stage('install') {
+            steps {
+                bat "mvn install -f mavenjava"
+            }
+        }
+
+        stage('test') {
+            steps {
+                bat "mvn test -f mavenjava"
+            }
+        }
+
+        stage('package') {
+            steps {
+                bat "mvn package -f mavenjava"
+            }
+        }
+    }
+}
+```
+
+Replace the repository URL and make sure the cloned folder is actually named `mavenjava`.
+
+### **Step 3. Save and run**
+
+1. Click Apply.
+2. Click Save.
+3. Click Build Now.
+4. Open build number.
+5. Open Console Output.
+
+### **Pipeline stages to memorise**
+
+| Stage            | Command                                      |
+| ---------------- | -------------------------------------------- |
+| Git repo & clean | `git clone URL` and `mvn clean -f mavenjava` |
+| Install          | `mvn install -f mavenjava`                   |
+| Test             | `mvn test -f mavenjava`                      |
+| Package          | `mvn package -f mavenjava`                   |
+
+### **Step 4. Build triggers**
+
+**Daily at 6 PM:**
+
+Job → Configure → Build Triggers → Build periodically.
+
+Enter:
+
+```
+0 18 * * *
+```
+
+Alternative inside Jenkinsfile:
+
+```
+triggers {
+    cron('0 18 * * *')
+}
+```
+
+**GitHub changes:**
+
+- Configure GitHub webhook.
+- Enable GitHub hook trigger for GITScm polling where supported.
+- Push code and verify automatic build.
+
+### **Important Pipeline commands**
+
+| Command            | Meaning              |
+| ------------------ | -------------------- |
+| `agent any`        | Any available agent  |
+| `bat`              | Windows command      |
+| `sh`               | Linux command        |
+| `echo`             | Print message        |
+| `mvn clean`        | Clean build          |
+| `mvn compile`      | Compile code         |
+| `mvn test`         | Run tests            |
+| `mvn package`      | Create package       |
+| `mvn install`      | Build and install    |
+| `env.BUILD_NUMBER` | Jenkins build number |
+
+# **8. Kubernetes and Nagios**
+
+Main flow: Minikube → Deployment → Service → Scale → Access → Nagios
+
+### **Part A: Kubernetes**
+
+Since Minikube is already installed, skip installation.
+
+**Step 1. Check cluster**
+
+```
+minikube status
+kubectl get nodes
+```
+
+Expected: Node status `Ready`.
+
+**Step 2. Create deployment**
+
+```
+kubectl create deployment mynginx --image=nginx
+```
+
+**Step 3. Check deployment and Pods**
+
+```
+kubectl get deployments
+kubectl get pods
+kubectl describe pods
+```
+
+**Step 4. Expose deployment**
+
+```
+kubectl expose deployment mynginx --type=NodePort --port=80 --target-port=80
+```
+
+**Step 5. Scale to four replicas**
+
+```
+kubectl scale deployment mynginx --replicas=4
+```
+
+Verify:
+
+```
+kubectl get pods
+```
+
+**Step 6. Access Nginx**
+
+```
+kubectl port-forward svc/mynginx 8081:80
+```
+
+Open:
+
+[Nginx application](http://localhost:8081?utm_source=chatgpt.com)
+
+**Step 7. Open dashboard**
+
+```
+minikube dashboard
+```
+
+**Step 8. Clean up**
+
+```
+kubectl delete deployment mynginx
+kubectl delete service mynginx
+```
+
+Optional:
+
+```
+minikube stop
+```
+
+Do not run `minikube delete` unless you want to delete the cluster.
+
+### **Kubernetes troubleshooting commands**
+
+| Purpose          | Command                                   |
+| ---------------- | ----------------------------------------- |
+| Check Pods       | `kubectl get pods`                        |
+| Check nodes      | `kubectl get nodes`                       |
+| Check deployment | `kubectl get deployments`                 |
+| Describe Pod     | `kubectl describe pod POD_NAME`           |
+| Pod logs         | `kubectl logs POD_NAME`                   |
+| Previous logs    | `kubectl logs POD_NAME --previous`        |
+| Execute shell    | `kubectl exec -it POD_NAME -- /bin/sh`    |
+| Rollback         | `kubectl rollout undo deployment/mynginx` |
+| Check services   | `kubectl get services`                    |
+| Check events     | `kubectl get events`                      |
+
+### **Part B: Nagios using Docker**
+
+**Step 1. Pull image**
+
+```
+docker pull jasonrivers/nagios:latest
+```
+
+**Step 2. Run container**
+
+```
+docker run -d --name nagiosdemo -p 8888:80 jasonrivers/nagios:latest
+```
+
+**Step 3. Check**
+
+```
+docker ps
+```
+
+**Step 4. Open dashboard**
+
+[Nagios Dashboard](http://localhost:8888?utm_source=chatgpt.com)
+
+Login:
+
+```
+Username: nagiosadmin
+Password: nagios
+```
+
+**Step 5. Explore**
+
+- Hosts
+- Services
+- Alerts
+
+**Step 6. Stop and remove**
+
+```
+docker stop nagiosdemo
+docker rm nagiosdemo
+docker rmi jasonrivers/nagios:latest
+```
+
+# **The 30 commands you must remember**
+
+This is the most important section. Revise it repeatedly.
+
+| No. | Command                                           | Experiment    |
+| --- | ------------------------------------------------- | ------------- |
+| 1   | `sudo apt update`                                 | AWS           |
+| 2   | `git clone URL`                                   | AWS / Jenkins |
+| 3   | `docker build -t myapp .`                         | AWS / Docker  |
+| 4   | `docker run -d -p 6060:8080 myapp`                | AWS           |
+| 5   | `docker ps`                                       | Docker        |
+| 6   | `docker pull redis`                               | Docker        |
+| 7   | `docker run --name my-redis -d redis`             | Docker        |
+| 8   | `docker exec -it my-redis redis-cli`              | Docker        |
+| 9   | `docker stop my-redis`                            | Docker        |
+| 10  | `docker rm my-redis`                              | Docker        |
+| 11  | `docker rmi redis`                                | Docker        |
+| 12  | `docker login`                                    | Docker        |
+| 13  | `docker commit CONTAINER_ID USERNAME/redis1`      | Docker        |
+| 14  | `docker push USERNAME/redis1`                     | Docker        |
+| 15  | `docker compose up -d`                            | Compose       |
+| 16  | `docker compose down`                             | Compose       |
+| 17  | `docker compose ps`                               | Compose       |
+| 18  | `docker compose up --build`                       | Compose       |
+| 19  | `ngrok http 8080`                                 | Jenkins       |
+| 20  | `mvn clean`                                       | Jenkins       |
+| 21  | `mvn install`                                     | Jenkins       |
+| 22  | `mvn test`                                        | Jenkins       |
+| 23  | `mvn package`                                     | Jenkins       |
+| 24  | `0 18 * * *`                                      | Jenkins       |
+| 25  | `minikube status`                                 | Kubernetes    |
+| 26  | `kubectl get nodes`                               | Kubernetes    |
+| 27  | `kubectl get pods`                                | Kubernetes    |
+| 28  | `kubectl create deployment mynginx --image=nginx` | Kubernetes    |
+| 29  | `kubectl scale deployment mynginx --replicas=4`   | Kubernetes    |
+| 30  | `docker logs -f nagiosdemo`                       | Nagios        |
+
+# **Test your practical memory**
+
+Use this checklist to find the steps or commands you still forget.
+
+**Revision tracker**
+
+# **0/48**
+
+**1. AWS Cloud Deployment**
+
+EC2 configuration and security group
+
+SSH connection
+
+Install Docker, Git and Nano
+
+Git clone and Dockerfile
+
+Docker build and run
+
+Public IP and port 6060
+
+**2. VPC**
+
+Create VPC and CIDR
+
+Create public/private subnets
+
+Attach Internet Gateway
+
+Public and private route tables
+
+NAT Gateway and private route
+
+Launch EC2 instances
+
+**3. Dockerfile**
+
+Pull and run Redis
+
+Redis SET and GET
+
+Stop, start and remove container
+
+Create Dockerfile
+
+Build custom image
+
+Docker Hub push and pull
+
+**4. Docker Compose**
+
+Create YAML file
+
+Run Nginx and PostgreSQL
+
+Add Redis and depends_on
+
+Configure network and volume
+
+Test persistent data
+
+Build and run Flask app
+
+**5. Jenkins Git Hooks**
+
+Start ngrok
+
+Configure GitHub webhook
+
+Enable Jenkins trigger
+
+Generate Gmail App Password
+
+Install Email Extension Plugin
+
+Configure SMTP and email triggers
+
+**6. Jenkins Maven Automation**
+
+Create MavenJava_Build
+
+Create MavenJava_Test
+
+Create MavenJava Pipeline View
+
+Create MavenWeb_Build
+
+Create MavenWeb_Test
+
+Create MavenWeb_Deploy and Pipeline View
+
+**7. Jenkins Script**
+
+Create Pipeline job
+
+Configure Maven tool
+
+Paste pipeline script
+
+Understand four stages
+
+Configure 6 PM cron
+
+Configure GitHub trigger
+
+**8. Kubernetes and Nagios**
+
+Check Minikube and nodes
+
+Create Nginx deployment
+
+Expose Service
+
+Scale to four replicas
+
+Port forward and dashboard
+
+Run and access Nagios
+
+**My blunt advice:** Don't try to memorise all eight PDFs word for word. Memorise the sequence of each experiment, the main commands, and what each command does. If you can reproduce the eight main flows without looking, you are in a much better position for the lab exam.
