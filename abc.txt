@@ -1,8 +1,4 @@
-# **Complete Cheat Sheet – All 8 Practical Experiments**
-
-This is your **last-minute practical revision sheet**. I've organised every experiment in the order you need to perform it, with the commands, configuration values and expected results.
-
-**How to use it:** Memorise the bold steps and commands. Before the exam, practise typing the commands once rather than just reading them.
+#Memorise the bold steps and commands. Before the exam, practise typing the commands once rather than just reading them.
 
 **8 practicals – quick navigation**
 
