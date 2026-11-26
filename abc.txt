@@ -9,7 +9,7 @@
 5. Jenkins GitHub Webhooks and Email
 6. Jenkins Maven Java and Web Automation
 7. Jenkins Pipeline Script and Triggers
-8. Kubernetes and Nagios
+8. Kubernetes and Nagioscc
 
 # **1. Cloud Deployment Using AWS**
 
